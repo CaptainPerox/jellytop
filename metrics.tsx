@@ -66,6 +66,15 @@ async function main() {
         help: "CPU time billed to the ffmpeg, user plus system.",
         value: each((r) => (r.p.stat.utime + r.p.stat.stime) / hz),
       }),
+      // A number rather than the kbps label, so Grafana can divide the
+      // ffmpeg's output rate by it: under 1 means it is not keeping up.
+      target_bits_per_second: gauge({
+        help: "Video bitrate the ffmpeg was told to produce (-b:v or -maxrate).",
+        value: each((r) => {
+          const kbps = describe(r.argv).kbps;
+          return kbps ? kbps * 1000 : null; // no bitrate given: no sample
+        }),
+      }),
       threads: gauge({ help: "Threads in the ffmpeg.", value: each((r) => r.p.stat.num_threads) }),
       render_node_open: gauge({
         help: "1 if the ffmpeg holds a /dev/dri/renderD* descriptor.",
