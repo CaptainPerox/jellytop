@@ -8,6 +8,7 @@
 # Variables:
 #   CONTAINER=jellyfin   the Docker container or LXC (name or Proxmox vmid) Jellyfin runs in
 #   PORT=9297            where the service exposes its /tty route
+#                        (Prometheus metrics are on :9298/metrics)
 
 CONTAINER ?= jellyfin
 PORT      ?= 9297
@@ -26,7 +27,8 @@ run:
 	yeet run ./main.tsx -- --container $(CONTAINER)
 
 up:
-	sed -e 's#^isolate = .*#isolate = "$(CURDIR)/main.tsx"#' \
+	sed -e 's#^isolate = "github:.*#isolate = "$(CURDIR)/main.tsx"#' \
+	    -e 's#^isolate = "\./#isolate = "$(CURDIR)/#' \
 	    -e 's#^\# args = .*#args = ["--container", "$(CONTAINER)"]#' \
 	    -e 's#:9297/#:$(PORT)/#' jellytop.service.toml \
 	  | yeet service import -n -a $(SERVICE) -

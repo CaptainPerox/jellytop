@@ -20,3 +20,17 @@ web-server = "ws://0.0.0.0:9297/"
 
 [units.web.routes."/tty"]
 target = "app"
+
+# Prometheus scrape target: one fresh isolate per scrape of
+# http://<host>:9298/metrics. Change the port below if 9298 is taken.
+[units.scrape]
+isolate = "./metrics.tsx"
+lazy = true
+
+[units.prom]
+web-server = "http://0.0.0.0:9298"
+
+[units.prom.routes."/metrics"]
+target = "scrape"
+portal = "console"
+tenancy = "per-connection"

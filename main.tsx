@@ -9,6 +9,7 @@
 
 import { login, LoginError } from "yeet:auth";
 import { Box, Text, signal } from "yeet:tui";
+import { describe } from "./describe.js";
 
 // Login state. Starts as "checking" so the dashboard never flashes before we
 // know the daemon is signed in; becomes { code, url } while a code waits to
@@ -192,35 +193,6 @@ async function factsFor(pid, containerId) {
   }
   facts.set(pid, f);
   return f;
-}
-
-// ---- reading the ffmpeg command line --------------------------------------
-
-function describe(argv) {
-  const flag = (name) => {
-    const i = argv.indexOf(name);
-    return i >= 0 ? argv[i + 1] : null;
-  };
-  const input = argv.find((a) => a.startsWith("file:"))?.slice(5) ?? "?";
-  const vcodec = flag("-codec:v:0") ?? flag("-c:v") ?? "copy";
-  const hwaccel = flag("-hwaccel") ?? "none";
-  const vf = flag("-vf") ?? "";
-  // hardware filters say scale_vaapi=w=1280:h=720; the software path says
-  // scale=trunc(min(max(iw\,ih*a)\,1280)/2)*2:... so take whichever appears.
-  const hw = vf.match(/scale(?:_vaapi|_qsv|_cuda)?=w=(\d+):h=(\d+)/);
-  const sw = vf.match(/scale=trunc\(min\(max\(iw\\,ih\*a\)\\,(\d+)\)/);
-  const bitrate = Number(flag("-b:v") ?? flag("-maxrate") ?? 0);
-  const hwEncode = /_(qsv|vaapi|nvenc|amf|v4l2m2m|videotoolbox)$/.test(vcodec);
-  const hwDecode = hwaccel !== "none";
-  const mode = hwDecode && hwEncode ? "hw" : hwEncode || hwDecode ? "mixed" : "sw";
-  return {
-    file: input.split("/").pop(),
-    vcodec,
-    hwaccel,
-    mode,
-    target: hw ? `${hw[1]}x${hw[2]}` : sw ? `${sw[1]}w` : "source",
-    kbps: bitrate ? Math.round(bitrate / 1000) : null,
-  };
 }
 
 // ---- the live model -------------------------------------------------------
